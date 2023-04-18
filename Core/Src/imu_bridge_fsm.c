@@ -203,11 +203,31 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_SanityState(void)
 static IMU_Bridge_StatusTypeDef IMU_Bridge_ConfigState(void)
 {
     char msg[100];
+    uint8_t gyroConfig;
+
     strcpy(msg, "\tCONFIG STATE\n\r");
     IMU_Bridge_SendString(msg);
 
+    MPU9250_GyroReadConfig(&gyroConfig);
+    sprintf(msg, "GYRO CONFIG WORD: %X\n\r", gyroConfig);
+    IMU_Bridge_SendString(msg);
 
-    if (IMU_Bridge_GetCmd() == IMU_BRIDGE_CMD_EXIT)
+    IMU_Bridge_CmdTypeDef next_cmd = IMU_Bridge_GetCmd();
+
+    if (next_cmd == IMU_BRIDGE_CMD_CFG_GYRO_FS250)
+    {
+        MPU9250_GyroSetFullScale(MPU9250_GYRO_CONFIG_250DPS);
+        strcpy(msg, ">> Setting Gyro Full Scale to 250 dps\n\r");
+        IMU_Bridge_SendString(msg);
+    }
+    if (next_cmd == IMU_BRIDGE_CMD_CFG_GYRO_FS500)
+    {
+        MPU9250_GyroSetFullScale(MPU9250_GYRO_CONFIG_500DPS);
+        strcpy(msg, ">> Setting Gyro Full Scale to 500 dps\n\r");
+        IMU_Bridge_SendString(msg);
+    }
+
+    if (next_cmd == IMU_BRIDGE_CMD_EXIT)
     {
         bridge_op_state = IMU_BRIDGE_FSM_OP_IDLE_STATE;
         strcpy(msg, "EXIT\n\r");

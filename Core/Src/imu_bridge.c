@@ -64,6 +64,14 @@ IMU_Bridge_CmdTypeDef IMU_Bridge_GetCmd(void)
     {
         cmd = IMU_BRIDGE_CMD_CONFIG;
     }
+    else if (strcmp((char*)pCmdBuffer, "CG1") == 0)
+    {
+        cmd = IMU_BRIDGE_CMD_CFG_GYRO_FS250;
+    }
+    else if (strcmp((char*)pCmdBuffer, "CG2") == 0)
+    {
+        cmd = IMU_BRIDGE_CMD_CFG_GYRO_FS500;
+    }
     else if (strcmp((char*)pCmdBuffer, "RDM") == 0)
     {
         cmd = IMU_BRIDGE_CMD_READ_MODE;
