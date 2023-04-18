@@ -1,0 +1,3 @@
+[submodule "Drivers/MPU9250_Driver"]
+	path = Drivers/MPU9250_Driver
+	url = git@github.com:gonzafernan/MPU9250_Driver.git
