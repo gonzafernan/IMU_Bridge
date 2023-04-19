@@ -42,7 +42,8 @@ typedef enum
     IMU_BRIDGE_CMD_READ_MODE        = 0x06U,
     IMU_BRIDGE_CMD_READ_ACCEL_ALL   = 0x07U,
     IMU_BRIDGE_CMD_READ_TEMP        = 0x08U,
-    IMU_BRIDGE_CMD_EXIT             = 0x09U,
+    IMU_BRIDGE_CMD_REALTIME         = 0x09U,
+    IMU_BRIDGE_CMD_EXIT             = 0x0AU,
     IMU_BRIDGE_CMD_INVALID          = 0xFFU,
 
 } IMU_Bridge_CmdTypeDef;

@@ -80,6 +80,10 @@ IMU_Bridge_CmdTypeDef IMU_Bridge_GetCmd(void)
     {
         cmd = IMU_BRIDGE_CMD_READ_ACCEL_ALL;
     }
+    else if (strcmp((char*)pCmdBuffer, "RTM") == 0)
+    {
+        cmd = IMU_BRIDGE_CMD_REALTIME;
+    }
     else if (strcmp((char*)pCmdBuffer, "TMP") == 0)
     {
         cmd = IMU_BRIDGE_CMD_READ_TEMP;

@@ -13,6 +13,7 @@
 
 #include "imu_bridge_fsm.h"
 #include "mpu9250.h"
+#include "utils.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -34,10 +35,11 @@ typedef enum
 */
 typedef enum
 {
-    IMU_BRIDGE_FSM_OP_IDLE_STATE    = 0x00U,
-    IMU_BRIDGE_FSM_OP_SANITY_STATE  = 0x01U,
-    IMU_BRIDGE_FSM_OP_CONFIG_STATE  = 0x02U,
-    IMU_BRIDGE_FSM_OP_READ_STATE    = 0x03U,
+    IMU_BRIDGE_FSM_OP_IDLE_STATE        = 0x00U,
+    IMU_BRIDGE_FSM_OP_SANITY_STATE      = 0x01U,
+    IMU_BRIDGE_FSM_OP_CONFIG_STATE      = 0x02U,
+    IMU_BRIDGE_FSM_OP_READ_STATE        = 0x03U,
+    IMU_BRIDGE_FSM_OP_REALTIME_STATE    = 0x04U,
 
 } IMU_Bridge_OpStateTypeDef;
 
@@ -48,10 +50,13 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_IdleState(void);
 static IMU_Bridge_StatusTypeDef IMU_Bridge_SanityState(void);
 static IMU_Bridge_StatusTypeDef IMU_Bridge_ConfigState(void);
 static IMU_Bridge_StatusTypeDef IMU_Bridge_ReadState(void);
+static void IMU_Bridge_RealTimeState_Entry(void);
+static IMU_Bridge_StatusTypeDef IMU_Bridge_RealTimeState(void);
 
 /* Private variables ---------------------------------------------------------*/
-static IMU_Bridge_FsmStateTypeDef bridge_fsm_state; /*!< IMU Bridge FSM status  */
-static IMU_Bridge_OpStateTypeDef bridge_op_state;   /*!< IMU Bridge FSM status  */
+static IMU_Bridge_FsmStateTypeDef bridge_fsm_state; /*!< IMU Bridge FSM status              */
+static IMU_Bridge_OpStateTypeDef bridge_op_state;   /*!< IMU Bridge FSM status              */
+static delay_t real_time_delay;                     /*!< Real Time delay (sys tick timer)   */
 
 static uint8_t temp_buffer[2];
 
@@ -137,6 +142,10 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_OpState(void)
     case IMU_BRIDGE_FSM_OP_CONFIG_STATE:
         status = IMU_Bridge_ConfigState();
         break;
+
+    case IMU_BRIDGE_FSM_OP_REALTIME_STATE:
+        status = IMU_Bridge_RealTimeState();
+        break;
     
     default:
         status = IMU_BRIDGE_ERROR;
@@ -169,6 +178,11 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_IdleState(void)
         bridge_op_state = IMU_BRIDGE_FSM_OP_READ_STATE;
         break;
     
+    case IMU_BRIDGE_CMD_REALTIME:
+        bridge_op_state = IMU_BRIDGE_FSM_OP_REALTIME_STATE;
+        IMU_Bridge_RealTimeState_Entry();
+        break;
+
     default:
         break;
     }
@@ -274,6 +288,45 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_ReadState(void)
     if (next_cmd == IMU_BRIDGE_CMD_EXIT)
     {
         bridge_op_state = IMU_BRIDGE_FSM_OP_IDLE_STATE;
+        strcpy(msg, "EXIT\n\r");
+        IMU_Bridge_SendString(msg);
+    }
+    return IMU_BRIDGE_OK;
+}
+
+/**
+ * @brief Entry event to Real Time state
+*/
+static void IMU_Bridge_RealTimeState_Entry(void)
+{
+    char msg[200];
+    strcpy(msg, "======================================\n\r");
+    IMU_Bridge_SendString(msg);
+    strcpy(msg, "\tREAL TIME STATE\n\r");
+    IMU_Bridge_SendString(msg);
+    delay_init(&real_time_delay, 100);
+}
+
+
+static IMU_Bridge_StatusTypeDef IMU_Bridge_RealTimeState(void)
+{
+    char msg[200];
+    IMU_Bridge_CmdTypeDef next_cmd = IMU_Bridge_GetCmd();
+
+    uint16_t AccelX, AccelY, AccelZ;
+
+    if (delay_read(&real_time_delay))
+    {
+        MPU9250_AccelReadRaw(&AccelX, &AccelY, &AccelZ);
+        sprintf(msg, "ACCEL READ:\t%d\t%d\t%d\n\r", AccelX, AccelY, AccelZ);
+        IMU_Bridge_SendString(msg);
+    }
+
+    if (next_cmd == IMU_BRIDGE_CMD_EXIT)
+    {
+        bridge_op_state = IMU_BRIDGE_FSM_OP_IDLE_STATE;
+        strcpy(msg, "======================================\n\r");
+        IMU_Bridge_SendString(msg);
         strcpy(msg, "EXIT\n\r");
         IMU_Bridge_SendString(msg);
     }
