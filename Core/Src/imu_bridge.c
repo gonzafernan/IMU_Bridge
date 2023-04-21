@@ -56,6 +56,7 @@ IMU_Bridge_CmdTypeDef IMU_Bridge_GetCmd(void)
 {
     IMU_Bridge_CmdTypeDef cmd;
     if (strcmp((char*)pCmdBuffer, "STY") == 0) cmd = IMU_BRIDGE_CMD_SANITY;
+    else if (strcmp((char*)pCmdBuffer, "INT") == 0) cmd = IMU_BRIDGE_CMD_INIT;
     else if (strcmp((char*)pCmdBuffer, "CFG") == 0) cmd = IMU_BRIDGE_CMD_CONFIG;
     else if (strcmp((char*)pCmdBuffer, "CG1") == 0) cmd = IMU_BRIDGE_CMD_CFG_GYRO_FS250;
     else if (strcmp((char*)pCmdBuffer, "CG2") == 0) cmd = IMU_BRIDGE_CMD_CFG_GYRO_FS500;

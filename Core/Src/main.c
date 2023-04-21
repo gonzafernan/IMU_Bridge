@@ -95,7 +95,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    if (IMU_Bridge_FsmUpdate() != IMU_BRIDGE_OK);
+    IMU_Bridge_FsmUpdate();
     HAL_Delay(5);
     HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     /* USER CODE END WHILE */

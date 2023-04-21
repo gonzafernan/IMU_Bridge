@@ -45,6 +45,8 @@ typedef enum
 
 /* Private function prototypes -----------------------------------------------*/
 static IMU_Bridge_StatusTypeDef IMU_Bridge_InitState(void);
+static void IMU_Bridge_ErrorState_Entry(void);
+static void IMU_Bridge_ErrorState(void);
 static void IMU_Bridge_OpState_Entry(void);
 static IMU_Bridge_StatusTypeDef IMU_Bridge_OpState(void);
 static IMU_Bridge_StatusTypeDef IMU_Bridge_IdleState(void);
@@ -77,7 +79,7 @@ void IMU_Bridge_FsmInit(void)
 /**
  * @brief IMU Bridge FSM update
 */
-IMU_Bridge_StatusTypeDef IMU_Bridge_FsmUpdate(void)
+void IMU_Bridge_FsmUpdate(void)
 {
     IMU_Bridge_StatusTypeDef status = IMU_BRIDGE_ERROR;
 
@@ -97,14 +99,14 @@ IMU_Bridge_StatusTypeDef IMU_Bridge_FsmUpdate(void)
         status = IMU_Bridge_OpState();
         break;
     case IMU_BRIDGE_FSM_ERROR_STATE:
-        /* code */
+        IMU_Bridge_ErrorState();
         break;
     default:
         status = IMU_BRIDGE_ERROR;
         break;
     }
 
-    return status;
+    if (status != IMU_BRIDGE_OK) IMU_Bridge_ErrorState_Entry();
 }
 
 /**
@@ -116,6 +118,27 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_InitState(void)
     IMU_Bridge_SendString(msg);
     if (MPU9250_Init() != MPU9250_OK) return IMU_BRIDGE_ERROR;
     return IMU_BRIDGE_OK;
+}
+
+/**
+ * @brief IMU Bridge Error state entry
+*/
+static void IMU_Bridge_ErrorState_Entry(void)
+{
+    char* msg = "ERROR STATE\n\r";
+    IMU_Bridge_SendString(msg);
+    bridge_fsm_state = IMU_BRIDGE_FSM_ERROR_STATE;
+}
+
+/**
+ * @brief IMU Bridge Error state
+*/
+static void IMU_Bridge_ErrorState(void)
+{
+    if (IMU_Bridge_GetCmd() == IMU_BRIDGE_CMD_INIT)
+    {
+        bridge_fsm_state = IMU_BRIDGE_FSM_INIT_STATE;
+    }
 }
 
 /**
@@ -239,7 +262,7 @@ static void IMU_Bridge_ConfigState_Entry(void)
 
     MPU9250_GyroReadConfig(&gyroConfig);
     MPU9250_AccelReadConfig(&accelConfig);
-    sprintf(msg, "GYRO CONFIG WORD: 0x%X\n\rACCEL CONFIG WORD: 0x%x/n/r", gyroConfig, accelConfig);
+    sprintf(msg, "GYRO CONFIG WORD: 0x%X\n\rACCEL CONFIG WORD: 0x%x\n\r", gyroConfig, accelConfig);
     IMU_Bridge_SendString(msg);
 }
 

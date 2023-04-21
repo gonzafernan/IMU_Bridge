@@ -21,7 +21,7 @@ extern "C" {
 #include "imu_bridge.h"
 
 void IMU_Bridge_FsmInit(void);
-IMU_Bridge_StatusTypeDef IMU_Bridge_FsmUpdate(void);
+void IMU_Bridge_FsmUpdate(void);
 
 #ifdef __cplusplus
 }

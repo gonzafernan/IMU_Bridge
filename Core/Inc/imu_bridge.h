@@ -35,6 +35,7 @@ typedef enum
 */
 typedef enum
 {
+    IMU_BRIDGE_CMD_INIT,
     IMU_BRIDGE_CMD_SANITY,
     IMU_BRIDGE_CMD_CONFIG,
     IMU_BRIDGE_CMD_CFG_GYRO_FS250,
