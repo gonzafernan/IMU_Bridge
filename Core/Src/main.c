@@ -18,9 +18,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "dma.h"
-#include "i2c.h"
-#include "usart.h"
+//#include "dma.h"
+//#include "i2c.h"
+//#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -86,7 +86,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
+  //MX_DMA_Init();
   /* USER CODE BEGIN 2 */
   IMU_Bridge_FsmInit();
   /* USER CODE END 2 */
@@ -96,7 +96,7 @@ int main(void)
   while (1)
   {
     if (IMU_Bridge_FsmUpdate() != IMU_BRIDGE_OK);
-    HAL_Delay(500);
+    HAL_Delay(5);
     HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     /* USER CODE END WHILE */
 

@@ -41,9 +41,10 @@ typedef enum
     IMU_BRIDGE_CMD_CFG_GYRO_FS2000  = 0x05U,
     IMU_BRIDGE_CMD_READ_MODE        = 0x06U,
     IMU_BRIDGE_CMD_READ_ACCEL_ALL   = 0x07U,
-    IMU_BRIDGE_CMD_READ_TEMP        = 0x08U,
-    IMU_BRIDGE_CMD_REALTIME         = 0x09U,
-    IMU_BRIDGE_CMD_EXIT             = 0x0AU,
+    IMU_BRIDGE_CMD_READ_GYRO_ALL    = 0x08U,
+    IMU_BRIDGE_CMD_READ_TEMP        = 0x09U,
+    IMU_BRIDGE_CMD_REALTIME         = 0x0AU,
+    IMU_BRIDGE_CMD_EXIT             = 0x0BU,
     IMU_BRIDGE_CMD_INVALID          = 0xFFU,
 
 } IMU_Bridge_CmdTypeDef;

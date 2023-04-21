@@ -45,13 +45,18 @@ typedef enum
 
 /* Private function prototypes -----------------------------------------------*/
 static IMU_Bridge_StatusTypeDef IMU_Bridge_InitState(void);
+static void IMU_Bridge_OpState_Entry(void);
 static IMU_Bridge_StatusTypeDef IMU_Bridge_OpState(void);
 static IMU_Bridge_StatusTypeDef IMU_Bridge_IdleState(void);
+static void IMU_Bridge_IdleState_Entry(void);
 static IMU_Bridge_StatusTypeDef IMU_Bridge_SanityState(void);
+static void IMU_Bridge_ConfigState_Entry(void);
 static IMU_Bridge_StatusTypeDef IMU_Bridge_ConfigState(void);
+static void IMU_Bridge_ReadState_Entry(void);
 static IMU_Bridge_StatusTypeDef IMU_Bridge_ReadState(void);
 static void IMU_Bridge_RealTimeState_Entry(void);
 static IMU_Bridge_StatusTypeDef IMU_Bridge_RealTimeState(void);
+static bool checkExitEvent(IMU_Bridge_CmdTypeDef cmd);
 
 /* Private variables ---------------------------------------------------------*/
 static IMU_Bridge_FsmStateTypeDef bridge_fsm_state; /*!< IMU Bridge FSM status              */
@@ -82,6 +87,8 @@ IMU_Bridge_StatusTypeDef IMU_Bridge_FsmUpdate(void)
         status = IMU_Bridge_InitState();
         bridge_fsm_state = IMU_BRIDGE_FSM_OP_STATE; 
         bridge_op_state = IMU_BRIDGE_FSM_OP_IDLE_STATE;
+        IMU_Bridge_OpState_Entry();
+        IMU_Bridge_IdleState_Entry();
         break;
     case IMU_BRIDGE_FSM_DEINIT_STATE:
         /* code */
@@ -112,20 +119,24 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_InitState(void)
 }
 
 /**
+ * @brief IMU Bridge Operational state entry
+*/
+static void IMU_Bridge_OpState_Entry(void)
+{
+    char* msg = "OP STATE\n\r";
+    IMU_Bridge_SendString(msg);
+}
+
+/**
  * @brief IMU Bridge Operational state
 */
 static IMU_Bridge_StatusTypeDef IMU_Bridge_OpState(void)
 {
-    char* msg = "OP STATE\n\r";
-    IMU_Bridge_SendString(msg);
-
     IMU_Bridge_StatusTypeDef status = IMU_BRIDGE_ERROR;
 
     switch (bridge_op_state)
     {
     case IMU_BRIDGE_FSM_OP_SANITY_STATE:
-        //status = MPU9250_Bridge_SanityState();
-        //bridge_op_state = BRIDGE_FSM_OP_IDLE_STATE;
         status = IMU_Bridge_SanityState();
         break;
 
@@ -134,8 +145,6 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_OpState(void)
         break;
 
     case IMU_BRIDGE_FSM_OP_IDLE_STATE:
-        //status = MPU9250_AccelRead(&hmpu1);
-        //bridge_op_state = BRIDGE_FSM_OP_SANITY_STATE;
         status = IMU_Bridge_IdleState();
         break;
 
@@ -157,13 +166,19 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_OpState(void)
 }
 
 /**
+ * @brief IMU Bridge Idle State entry
+*/
+static void IMU_Bridge_IdleState_Entry(void)
+{
+    char* msg = "\tIDLE STATE\n\r";
+    IMU_Bridge_SendString(msg);
+}
+
+/**
  * @brief IMU Bridge Idle State
 */
 static IMU_Bridge_StatusTypeDef IMU_Bridge_IdleState(void)
 {
-    char* msg = "\tIDLE STATE\n\r";
-    IMU_Bridge_SendString(msg);
-
     switch (IMU_Bridge_GetCmd())
     {
     case IMU_BRIDGE_CMD_SANITY:
@@ -172,10 +187,12 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_IdleState(void)
 
     case IMU_BRIDGE_CMD_CONFIG:
         bridge_op_state = IMU_BRIDGE_FSM_OP_CONFIG_STATE;
+        IMU_Bridge_ConfigState_Entry();
         break;
     
     case IMU_BRIDGE_CMD_READ_MODE:
         bridge_op_state = IMU_BRIDGE_FSM_OP_READ_STATE;
+        IMU_Bridge_ReadState_Entry();
         break;
     
     case IMU_BRIDGE_CMD_REALTIME:
@@ -187,9 +204,6 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_IdleState(void)
         break;
     }
 
-    //hmpu1.Address = MPU9250_I2C_ADDRESS_1;
-    //hmpu1.I2C_Timeout = 150;
-    //if (MPU9250_Init(&hmpu1) != MPU9250_OK) return IMU_BRIDGE_ERROR;
     return IMU_BRIDGE_OK;
 }
 
@@ -212,9 +226,9 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_SanityState(void)
 }
 
 /**
- * @brief IMU Bridge Configuration State
+ * @brief IMU Bridge Configuration State entry
 */
-static IMU_Bridge_StatusTypeDef IMU_Bridge_ConfigState(void)
+static void IMU_Bridge_ConfigState_Entry(void)
 {
     char msg[100];
     uint8_t gyroConfig;
@@ -225,6 +239,14 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_ConfigState(void)
     MPU9250_GyroReadConfig(&gyroConfig);
     sprintf(msg, "GYRO CONFIG WORD: %X\n\r", gyroConfig);
     IMU_Bridge_SendString(msg);
+}
+
+/**
+ * @brief IMU Bridge Configuration State
+*/
+static IMU_Bridge_StatusTypeDef IMU_Bridge_ConfigState(void)
+{
+    char msg[100];
 
     IMU_Bridge_CmdTypeDef next_cmd = IMU_Bridge_GetCmd();
 
@@ -241,13 +263,19 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_ConfigState(void)
         IMU_Bridge_SendString(msg);
     }
 
-    if (next_cmd == IMU_BRIDGE_CMD_EXIT)
-    {
-        bridge_op_state = IMU_BRIDGE_FSM_OP_IDLE_STATE;
-        strcpy(msg, "EXIT\n\r");
-        IMU_Bridge_SendString(msg);
-    }
+    if (checkExitEvent(next_cmd)) bridge_op_state = IMU_BRIDGE_FSM_OP_IDLE_STATE;
+    
     return IMU_BRIDGE_OK;
+}
+
+/**
+ * @brief IMU Bridge Read State Entry
+*/
+static void IMU_Bridge_ReadState_Entry(void)
+{
+    char msg[200];
+    strcpy(msg, "\tREAD STATE\n\r");
+    IMU_Bridge_SendString(msg);
 }
 
 /**
@@ -256,8 +284,6 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_ConfigState(void)
 static IMU_Bridge_StatusTypeDef IMU_Bridge_ReadState(void)
 {
     char msg[200];
-    strcpy(msg, "\tREAD STATE\n\r");
-    IMU_Bridge_SendString(msg);
     IMU_Bridge_CmdTypeDef next_cmd = IMU_Bridge_GetCmd();
 
     if (next_cmd == IMU_BRIDGE_CMD_READ_ACCEL_ALL)
@@ -273,10 +299,7 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_ReadState(void)
     }
     if (next_cmd == IMU_BRIDGE_CMD_READ_TEMP)
     {
-        MPU9250_TempRead(temp_buffer);
-    }
-    if (MPU9250_IsDataReady())
-    {
+        MPU9250_TempReadRaw(temp_buffer);
         uint16_t temp = (temp_buffer[0] << 8) | temp_buffer[1];
         strcpy(msg, "======================================\n\r");
         IMU_Bridge_SendString(msg);
@@ -284,13 +307,26 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_ReadState(void)
         IMU_Bridge_SendString(msg);
         strcpy(msg, "======================================\n\r");
         IMU_Bridge_SendString(msg);
+
     }
-    if (next_cmd == IMU_BRIDGE_CMD_EXIT)
+    if (next_cmd == IMU_BRIDGE_CMD_READ_GYRO_ALL)
     {
-        bridge_op_state = IMU_BRIDGE_FSM_OP_IDLE_STATE;
-        strcpy(msg, "EXIT\n\r");
-        IMU_Bridge_SendString(msg);
+        MPU9250_GyroFetch();
     }
+    if (MPU9250_IsDataReady())
+    {
+        uint16_t GyroX, GyroY, GyroZ;
+        MPU9250_GyroReadFromBuffer(&GyroX, &GyroY, &GyroZ);
+        strcpy(msg, "======================================\n\r");
+        IMU_Bridge_SendString(msg);
+        sprintf(msg, "GYRO READ (Non-Blocking):\t%d\t%d\t%d\n\r", GyroX, GyroY, GyroZ);
+        IMU_Bridge_SendString(msg);
+        strcpy(msg, "======================================\n\r");
+        IMU_Bridge_SendString(msg);
+
+    }
+    if (checkExitEvent(next_cmd)) bridge_op_state = IMU_BRIDGE_FSM_OP_IDLE_STATE;
+    
     return IMU_BRIDGE_OK;
 }
 
@@ -322,13 +358,26 @@ static IMU_Bridge_StatusTypeDef IMU_Bridge_RealTimeState(void)
         IMU_Bridge_SendString(msg);
     }
 
-    if (next_cmd == IMU_BRIDGE_CMD_EXIT)
+    if (checkExitEvent(next_cmd)) bridge_op_state = IMU_BRIDGE_FSM_OP_IDLE_STATE;
+    
+    return IMU_BRIDGE_OK;
+}
+
+/**
+ * @brief   Check for exit command event
+ * @param   cmd: Command received
+ * @retval  bool
+*/
+static bool checkExitEvent(IMU_Bridge_CmdTypeDef cmd)
+{
+    char msg[200];
+    if (cmd == IMU_BRIDGE_CMD_EXIT)
     {
-        bridge_op_state = IMU_BRIDGE_FSM_OP_IDLE_STATE;
         strcpy(msg, "======================================\n\r");
         IMU_Bridge_SendString(msg);
         strcpy(msg, "EXIT\n\r");
         IMU_Bridge_SendString(msg);
+        return true;
     }
-    return IMU_BRIDGE_OK;
+    return false;
 }

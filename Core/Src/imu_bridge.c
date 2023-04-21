@@ -55,7 +55,6 @@ void IMU_Bridge_RxCallback(void)
 IMU_Bridge_CmdTypeDef IMU_Bridge_GetCmd(void)
 {
     IMU_Bridge_CmdTypeDef cmd;
-    //if (pCmdBuffer[0] == 'S' && pCmdBuffer[1] == 'S' && pCmdBuffer[1] == 'S')
     if (strcmp((char*)pCmdBuffer, "STY") == 0)
     {
         cmd = IMU_BRIDGE_CMD_SANITY;
@@ -79,6 +78,10 @@ IMU_Bridge_CmdTypeDef IMU_Bridge_GetCmd(void)
     else if (strcmp((char*)pCmdBuffer, "AAW") == 0)
     {
         cmd = IMU_BRIDGE_CMD_READ_ACCEL_ALL;
+    }
+    else if (strcmp((char*)pCmdBuffer, "GAW") == 0)
+    {
+        cmd = IMU_BRIDGE_CMD_READ_GYRO_ALL;
     }
     else if (strcmp((char*)pCmdBuffer, "RTM") == 0)
     {
